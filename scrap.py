@@ -11,9 +11,8 @@ MONGO_URI = "mongodb+srv://ilyas:qwertyuiop@tpscraper.3qvttr9.mongodb.net/blog_m
 DB_NAME = "blog_moderateur_db"
 COLLECTION_NAME = "articles"
 # --- 2. Connexion à MongoDB ---
-# On utilise certifi pour les certificats SSL
+# On utilise certifi pour les certificats SSL car erreur sur mac
 try:
-    # On passe les certificats de la librairie certifi à MongoClient
     ca = certifi.where()
     client = MongoClient(MONGO_URI, tlsCAFile=ca)
    
@@ -77,7 +76,6 @@ def scrape_article(article_url):
  
     content_div = soup.find('div', class_='entry-content')
     if content_div:
-        # Nettoyage amélioré pour enlever les scripts, styles, etc.
         for unwanted_tag in content_div.find_all(['script', 'style']):
             unwanted_tag.decompose()
         content_text = ' '.join(content_div.get_text(separator=' ', strip=True).split())
@@ -136,13 +134,11 @@ def main():
     except requests.RequestException as e:
         print(f"Impossible de charger le flux RSS : {e}")
         return
- 
-    # On utilise 'xml' comme parser car un flux RSS est du XML
+    # On parse le flux RSS avec BeautifulSoup
     soup = BeautifulSoup(response.content, 'xml')
-   
-    # Dans un flux RSS, le lien est dans une balise <link> à l'intérieur d'un <item>
+    # On récupère tous les liens des articles
     urls_to_scrape = [item.link.text for item in soup.find_all('item')]
- 
+    # On filtre les URLs pour ne garder que celles des articles
     if not urls_to_scrape:
         print("Aucun article trouvé dans le flux RSS. Le format a peut-être changé.")
         return
